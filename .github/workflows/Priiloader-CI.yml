@@ -31,13 +31,16 @@ jobs:
         run: |
           make
 
+      - name: Stage Artifacts
+        run: |
+          mkdir -p ${{ github.workspace }}/artifacts
+          find ${{ github.workspace }} -maxdepth 1 \\( -name "*.dol" -o -name "*.elf" -o -name "*.wad" \\) \
+            -exec cp {} ${{ github.workspace }}/artifacts/ \;
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: priiloader-${{ github.sha }}
-          path: |
-            ${{ github.workspace }}/*.dol
-            ${{ github.workspace }}/*.elf
-            ${{ github.workspace }}/*.wad
+          path: ${{ github.workspace }}/artifacts/
           if-no-files-found: error
           retention-days: 30
