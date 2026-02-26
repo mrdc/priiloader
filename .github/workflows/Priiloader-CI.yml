@@ -31,16 +31,32 @@ jobs:
         run: |
           make
 
-      - name: Stage Artifacts
+      - name: List workspace (debug)
+        shell: bash
         run: |
-          mkdir -p ${{ github.workspace }}/artifacts
-          find ${{ github.workspace }} -maxdepth 1 \\( -name "*.dol" -o -name "*.elf" -o -name "*.wad" \\) \
-            -exec cp {} ${{ github.workspace }}/artifacts/ \;
+          pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          find "$GITHUB_WORKSPACE" -maxdepth 3 -type f | sort
 
-      - name: Upload Artifacts
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -e
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          # Collect .dol, .elf, .wad without using \\( \\)
+          find "$GITHUB_WORKSPACE" -maxdepth 3 -type f -name '*.dol' -print0 \
+            | xargs -0 -I {} cp "{}" "$GITHUB_WORKSPACE/artifacts" || true
+          find "$GITHUB_WORKSPACE" -maxdepth 3 -type f -name '*.elf' -print0 \
+            | xargs -0 -I {} cp "{}" "$GITHUB_WORKSPACE/artifacts" || true
+          find "$GITHUB_WORKSPACE" -maxdepth 3 -type f -name '*.wad' -print0 \
+            | xargs -0 -I {} cp "{}" "$GITHUB_WORKSPACE/artifacts" || true
+          echo "Staged files:"
+          ls -l "$GITHUB_WORKSPACE/artifacts"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: priiloader-${{ github.sha }}
-          path: ${{ github.workspace }}/artifacts/
+          path: ${{ github.workspace }}/artifacts
           if-no-files-found: error
           retention-days: 30
